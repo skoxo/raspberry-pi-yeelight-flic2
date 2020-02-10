@@ -49,14 +49,15 @@ sudo pip3 install yeelight
 
 ## Connecting with your Yeelight and Flic 2
 ### Yeelight
-The Yeelight and Raspberry Pi should of course be connected to the same wifi network. To be able to connect with you light bulb you should determine it's IP adress. First open a Python prompt and then use the Yeelight Python library to obtain information about your bulb. Write down the ip-address that is returned in the prompt and exit the prompt with `ctrl D`.
+The Yeelight and Raspberry Pi should of course be connected to the same wifi network. To be able to connect with you light bulb you should determine it's IP adress. First open a Python command-line by typing:
 ```
 python3
-
+```
+And use the Yeelight Python library, with the code below, to obtain information about your bulb. Write down the ip-address that is returned in the command-line and exit with `ctrl D`.
+```
 from yeelight import discover_bulbs
 discover_bulbs()
 ```
-
 ### Flic 2
 First, start the flic-daemon (this will remain running in the command-line):
 ```
