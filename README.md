@@ -1,12 +1,10 @@
-# raspberry-pi-yeelight-flic2
-Control a Yeelight RGB wifi lamp with a Flic 2 smart button (BLE) via a Raspberry Pi
+# Guide for controlling your Yeelight with a Flic 2 button via a Raspberry Pi
+Use a wifi and bluetooth equiped Raspberry Pi to control your Yeelight RGB wifi bulb with a Flic 2 bluetooth button.
 
 ## Requirements
 * Raspberry Pi 3, 4 or zero w (older versions will also work if combined with wifi and BLE dongles)
 * [Yeelight RGB led bulb](https://www.yeelight.com/en_US/product/lemon2-color)
 * [Flic 2 smart button](https://flic.io/flic2)
-
-This guide assumes some basic understanding of UNIX.
 
 ## Getting started
 First setup your Pi by following the [official guide](https://projects.raspberrypi.org/en/pathways/getting-started-with-raspberry-pi). During this guide we will be communicating with your Pi via SSH, so next [setup](https://www.raspberrypi.org/documentation/remote-access/ssh/) SSH on your Pi. You should now be able to connect with the command-line of your Pi from your laptop (in my case a Macbook).
@@ -36,7 +34,7 @@ git clone https://github.com/50ButtonsEach/fliclib-linux-hci.git
 cp fliclib-linux-hci/bin/armv6l/flicd /home/pi/lib/flic
 cp -r fliclib-linux-hci/clientlib/python/. /home/pi/lib/flic/
 ```
-Then, check if pip (a Python package manager) is already installed.
+Check if pip (a Python package manager) is already installed.
 ```
 pip3 --version
 ```
@@ -44,7 +42,7 @@ If it cannot find the command, install pip:
 ```
 sudo apt-get install python3-pip
 ```
-And install a Yeelight Python library:
+Install a Yeelight Python library:
 ```
 sudo pip3 install yeelight
 ```
@@ -106,7 +104,7 @@ def longPress():
 	except:
 		None
 ```
-And replace the following text:
+Replace the following text:
 ```
 cc = fliclib.ButtonConnectionChannel(bd_addr)
 cc.on_button_up_or_down = \
@@ -129,34 +127,36 @@ python3 my_client.py
 Stop the python script by hitting `ctrl C`. And stop the daemon by hitting `ctrl C` in the first command-line window.
 
 ## Wrapping up
-Now, we want to make sure that the flic-daemon and client script are started when the Raspberry Pi is powered on. First, we create a new bash script that start the daemon:
+Now, we want to make sure that the flic-daemon and client script are started when the Raspberry Pi is powered on. First, we create a new bash script that starts the daemon:
 ```
 cd /home/pi/lib/flic
-nano start_bluetooth.sh
+nano start_daemon.sh
 ```
 Fill the script with the following code and save and close the file like you did before.
 ```
 #!/bin/sh
-/home/pi/lib/flic/flicd -f /home/pi/lib/flic/flic.sqlite3 -w &
+/home/pi/lib/flic/flicd -f /home/pi/lib/flic/flic.sqlite3 -w
 ```
 Second, we create a bash script that starts the client:
 ```
 nano start_client.sh
 ```
+Fill it with:
 ```
 #!/bin/sh
 /usr/bin/python3 /home/pi/lib/flic/my_client.py &
 ```
 Set execution permission for these scripts:
 ```
-sudo chmod +x start_bluetooth.sh start_client.sh
+sudo chmod +x start_daemon.sh start_client.sh
 ```
-Now, we want to create a system service that is automatically started when your Raspberry boots and is restarted when it crashes:
+Next, we can check if the scripts work. First enter `./start_daemon.sh`. Then, open a new SSH command-line and enter `./start_client.sh`. Pressing the Flic button should turn on your Yeelight!
+
+Now, we want to create a system service that is automatically started when your Raspberry boots and is restarted when it crashes. To do this we are going to create a system service that runs on boot and starts the Flic daemon (flicd):
 ```
-cd /etc/systemd/system/
-sudo nano flicd.service
+sudo nano /etc/systemd/system/flicd.service
 ```
-Fill `flicd.service` with the following code:
+Fill the empty `flicd.service` with the following code:
 ```
 [Unit]
 Description=flicd Service
@@ -165,33 +165,33 @@ Before=rc-local.service
 
 [Service]
 TimeoutStartSec=0
-ExecStart=/home/pi/lib/flic/start_bluetooth.sh
+ExecStart=/home/pi/lib/flic/start_daemon.sh
 Restart=always
-RestartSec=3
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target
 ```
-Then enable it to run on boot and start the service:
+Enable it to run on boot and start the service:
 ```
 sudo systemctl enable flicd.service
 sudo systemctl start flicd.service
 ```
-Then open `rc.local` for editing:
+The Flic daemon is all set, next is the Flic client. Open `rc.local` for editing:
 ```
 sudo nano /etc/rc.local
 ```
-And add the following code above `exit 0`:
+Add the following code __above__ `exit 0`:
 ```
 sleep 5
 sudo -H -u pi /home/pi/lib/flic/start_client.sh
 ```
-Reload the service daemon:
+Reload the system services daemon:
 ```
 sudo systemctl daemon-reload
 ```
 Everything should be ready now!! 
-To check, reboot your Raspberry Pi by:
+To check, reboot your Raspberry Pi:
 ```
 sudo reboot now
 ```
