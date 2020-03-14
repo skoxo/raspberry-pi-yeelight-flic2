@@ -161,7 +161,6 @@ Fill the empty `flicd.service` with the following code:
 ```
 [Unit]
 Description=flicd Service
-After=bluetooth.service
 Before=rc-local.service
 
 [Service]
@@ -173,8 +172,10 @@ RestartSec=10
 [Install]
 WantedBy=multi-user.target
 ```
-Enable it to run on boot and start the service:
+Disable the standard bluetooth service and enable the Flic daemon to run on boot and start the service:
 ```
+sudo systemctl stop bluetooth.service
+sudo systemctl disable bluetooth.service
 sudo systemctl enable flicd.service
 sudo systemctl start flicd.service
 ```
